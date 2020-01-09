@@ -1,3 +1,5 @@
+pub mod emulator;
+
 use structopt::StructOpt;
 use std::{
     path::PathBuf,
