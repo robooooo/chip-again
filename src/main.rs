@@ -1,4 +1,5 @@
 pub mod emulator;
+pub mod opcodes;
 
 use structopt::StructOpt;
 use std::{
