@@ -1,15 +1,21 @@
+pub mod display;
 pub mod emulator;
 pub mod opcodes;
 
+use std::path::PathBuf;
 use structopt::StructOpt;
-use std::{
-    path::PathBuf,
-};
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "chip-again", about = "Yet another chip-8 emulator (because YAC8 was taken)")]
+#[structopt(
+    name = "chip-again",
+    about = "Yet another chip-8 emulator (because YAC8 was taken)"
+)]
 struct Opt {
-    #[structopt(parse(from_os_str), name = "rom", help = "Path to a chip8 compatible ROM file.")]
+    #[structopt(
+        parse(from_os_str),
+        name = "rom",
+        help = "Path to a chip8 compatible ROM file."
+    )]
     input: PathBuf,
 }
 
