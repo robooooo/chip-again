@@ -75,16 +75,16 @@ impl State {
             // 8xy3 - Set Vx = Vx XOR Vy.
             [0x8, x, y, 0x3] => self.reg_v[x as usize] ^= self.reg_v[y as usize],
             // 8xy4 - Set Vx = Vx + Vy, set VF = carry.
-            [0x8, x, y, 0x4] => opcodes::add(self, x, y),
+            [0x8, x, y, 0x4] => opcodes::overflowing_add(self, x, y),
             // 8xy5 - Set Vx = Vx - Vy, set VF = NOT borrow.
-            [0x8, x, y, 0x5] => opcodes::sub(self, x, y),
+            [0x8, x, y, 0x5] => opcodes::overflowing_sub(self, x, y),
             // 8xy6 - Set Vx = Vx SHR 1.
-            [0x8, x, _, 0x6] => opcodes::shr(self, x),
+            [0x8, x, _, 0x6] => opcodes::overflowing_shift_right(self, x),
             // 8xy7 - Set Vx = Vy - Vx, set VF = NOT borrow.
             // Note this reuses opcodes::sub
-            [0x8, x, y, 0x7] => opcodes::sub(self, y, x),
+            [0x8, x, y, 0x7] => opcodes::overflowing_sub(self, y, x),
             // 8xyE - Set Vx = Vx SHL 1.
-            [0x8, x, _, 0xE] => opcodes::shl(self, x),
+            [0x8, x, _, 0xE] => opcodes::overflowing_shift_left(self, x),
             // 9xy0 - Skip next instruction if Vx != Vy.
             [0x9, x, y, 0x0] => opcodes::skip_reg_ne(self, x, y),
             // Annn - Set I = nnn.
