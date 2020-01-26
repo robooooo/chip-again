@@ -2,6 +2,7 @@
   <dictionary name="april">
     <words>
       <w>addr</w>
+      <w>fontset</w>
       <w>opcode</w>
     </words>
   </dictionary>

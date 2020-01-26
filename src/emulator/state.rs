@@ -1,4 +1,4 @@
-use crate::opcodes;
+use crate::emulator::{fontset, opcodes};
 use std::default::Default;
 
 #[derive(Copy, Clone)]
@@ -12,7 +12,8 @@ pub struct State {
     pub(crate) reg_i: u16,
     /// The system's sound timer.
     ///
-    /// This is decremented every frame. Furthermore, when it reaches zero, a beep is emitted by the system.
+    /// This is decremented every frame. Furthermore, when it reaches zero, a beep is emitted
+    /// by the system.
     pub(crate) sound: u8,
     /// The system's delay timer.
     ///
@@ -26,30 +27,41 @@ pub struct State {
     pub(crate) stack: [u16; 16],
     /// Pointer to the current value in the stack.
     pub(crate) sp: usize,
+    /// Current contents of the screen.
+    pub(crate) display: [bool; 2048],
 }
 
 impl State {
-    /// Create a new emulator with the given initial memory
-    pub fn new(mem: [u8; 4096]) -> Self {
-        State {
-            mem,
-            ..Self::default()
-        }
+    /// Width of the display.
+    pub const WIDTH: usize = 64;
+
+    /// Height of the display.
+    pub const HEIGHT: usize = 32;
+
+    /// Create a new emulator with the given program ROM.
+    /// In this case, the ROM is loaded into memory at the address 0x200, which is where the
+    /// majority of CHIP-8 programs start. The program counter is also initialised to point to
+    /// this location.
+    pub fn new(mem: &[u8]) -> Self {
+        let mut res = Self::default();
+        res.mem[0x200..].copy_from_slice(mem);
+        res
     }
 
-    /// Step forward one instruction in the logical simulation
+    /// Step forward one instruction in the logical simulation.
     pub fn step(&mut self) {
-        // We want to get the opcode at the program counter and simply match against it to call a function from the `opcodes` module
-        // The opcode consists of two bytes, we're interested in each nibble, so 4 values
+        // We want to get the opcode at the program counter and simply match against it to call
+        // a function from the `opcodes` module. The opcode consists of two bytes,
+        // we're interested in each nibble, so 4 values
         let mut opcode = [0u8; 4];
-        opcode[0] = self.mem[self.pc as usize] & 0xF0;
-        opcode[1] = self.mem[self.pc as usize] & 0x0F;
-        opcode[2] = self.mem[self.pc as usize] & 0xF0;
-        opcode[3] = self.mem[self.pc as usize] & 0x0F;
+        opcode[0] = self.mem[self.pc as usize + 0] & 0xF0;
+        opcode[1] = self.mem[self.pc as usize + 0] & 0x0F;
+        opcode[2] = self.mem[self.pc as usize + 1] & 0xF0;
+        opcode[3] = self.mem[self.pc as usize + 1] & 0x0F;
 
         match opcode {
             // 00E0 - Clear the display.
-            [0x0, 0x0, 0xE, 0x0] => opcodes::clear_display(self),
+            [0x0, 0x0, 0xE, 0x0] => self.display = [false; 2048],
             // 00EE - Return from a subroutine.
             [0x0, 0x0, 0xE, 0xE] => opcodes::r#return(self),
             // 1nnn - Jump to location *nnn*.
@@ -81,7 +93,6 @@ impl State {
             // 8xy6 - Set Vx = Vx SHR 1.
             [0x8, x, _, 0x6] => opcodes::overflowing_shift_right(self, x),
             // 8xy7 - Set Vx = Vy - Vx, set VF = NOT borrow.
-            // Note this reuses opcodes::sub
             [0x8, x, y, 0x7] => opcodes::overflowing_sub(self, y, x),
             // 8xyE - Set Vx = Vx SHL 1.
             [0x8, x, _, 0xE] => opcodes::overflowing_shift_left(self, x),
@@ -124,11 +135,11 @@ impl State {
     }
 }
 
-// Create a new `State` with an empty memory.
-// The starting PC is set to 0x200.
+/// Create a new `State` with an empty memory.
+/// The starting PC is set to 0x200.
 impl Default for State {
     fn default() -> Self {
-        Self {
+        let mut res = Self {
             mem: [0; 4096],
             reg_v: [0; 16],
             reg_i: 0,
@@ -137,15 +148,35 @@ impl Default for State {
             pc: 0x200,
             stack: [0; 16],
             sp: 0,
-        }
+            display: [false; 2048],
+        };
+        // Copy fontset into memory
+        res.mem[00..05].copy_from_slice(&fontset::NUM_1);
+        res.mem[05..10].copy_from_slice(&fontset::NUM_2);
+        res.mem[10..15].copy_from_slice(&fontset::NUM_3);
+        res.mem[15..20].copy_from_slice(&fontset::NUM_4);
+        res.mem[20..25].copy_from_slice(&fontset::NUM_5);
+        res.mem[25..30].copy_from_slice(&fontset::NUM_6);
+        res.mem[30..35].copy_from_slice(&fontset::NUM_7);
+        res.mem[35..40].copy_from_slice(&fontset::NUM_8);
+        res.mem[40..45].copy_from_slice(&fontset::NUM_9);
+        res.mem[45..50].copy_from_slice(&fontset::DIG_A);
+        res.mem[50..55].copy_from_slice(&fontset::DIG_B);
+        res.mem[55..60].copy_from_slice(&fontset::DIG_B);
+        res.mem[60..65].copy_from_slice(&fontset::DIG_C);
+        res.mem[65..70].copy_from_slice(&fontset::DIG_D);
+        res.mem[70..75].copy_from_slice(&fontset::DIG_E);
+        res
     }
 }
 
+/// Combine three nibbles into an address.
 fn addr(n1: u8, n2: u8, n3: u8) -> u16 {
     let (n1, n2, n3) = (n1 as u16, n2 as u16, n3 as u16);
     (n1 << 8) & (n2 << 4) & n3
 }
 
+/// Combine two nibbles into a byte.
 fn byte(k1: u8, k2: u8) -> u8 {
     (k1 << 4) & k2
 }

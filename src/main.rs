@@ -1,6 +1,6 @@
 pub mod display;
 pub mod emulator;
-pub mod opcodes;
+pub mod utils;
 
 use std::path::PathBuf;
 use structopt::StructOpt;
