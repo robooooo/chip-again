@@ -1,4 +1,4 @@
-use crate::emulator::{fontset, opcodes};
+use crate::emulator::{fontset, input::Input, opcodes};
 use std::default::Default;
 
 #[derive(Copy, Clone)]
@@ -48,8 +48,9 @@ impl State {
         res
     }
 
-    /// Step forward one instruction in the logical simulation.
-    pub fn step(&mut self) {
+    /// Step forward one instruction in the logical simulation. This is provided keys are currently
+    /// being pressed, to assume they are not, see `State::step_forward`.
+    pub fn step(&mut self, input: Input) {
         // We want to get the opcode at the program counter and simply match against it to call
         // a function from the `opcodes` module. The opcode consists of two bytes,
         // we're interested in each nibble, so 4 values
@@ -69,11 +70,11 @@ impl State {
             // 2nnn - Call subroutine at nnn.
             [0x2, n1, n2, n3] => opcodes::call(self, addr(n1, n2, n3)),
             // 3xkk - Skip next instruction if Vx = kk.
-            [0x3, x, k1, k2] => opcodes::skip_eq(self, x, byte(k1, k2)),
+            [0x3, x, k1, k2] => opcodes::skip_if_equal(self, x, byte(k1, k2)),
             // 4xkk - Skip next instruction if Vx != kk.
-            [0x4, x, k1, k2] => opcodes::skip_ne(self, x, byte(k1, k2)),
+            [0x4, x, k1, k2] => opcodes::skip_if_not_equal(self, x, byte(k1, k2)),
             // 5xy0 - Skip next instruction if Vx = Vy.
-            [0x5, x, y, 0x0] => opcodes::skip_reg_eq(self, x, y),
+            [0x5, x, y, 0x0] => opcodes::skip_reg_equal(self, x, y),
             // 6xkk - Set Vx = kk.
             [0x6, x, k1, k2] => self.reg_v[x as usize] = byte(k1, k2),
             // 7xkk - Set Vx = Vx + kk.
@@ -87,17 +88,17 @@ impl State {
             // 8xy3 - Set Vx = Vx XOR Vy.
             [0x8, x, y, 0x3] => self.reg_v[x as usize] ^= self.reg_v[y as usize],
             // 8xy4 - Set Vx = Vx + Vy, set VF = carry.
-            [0x8, x, y, 0x4] => opcodes::overflowing_add(self, x, y),
+            [0x8, x, y, 0x4] => opcodes::add(self, x, y),
             // 8xy5 - Set Vx = Vx - Vy, set VF = NOT borrow.
-            [0x8, x, y, 0x5] => opcodes::overflowing_sub(self, x, y),
+            [0x8, x, y, 0x5] => opcodes::subtract(self, x, y),
             // 8xy6 - Set Vx = Vx SHR 1.
-            [0x8, x, _, 0x6] => opcodes::overflowing_shift_right(self, x),
+            [0x8, x, _, 0x6] => opcodes::shift_right(self, x),
             // 8xy7 - Set Vx = Vy - Vx, set VF = NOT borrow.
-            [0x8, x, y, 0x7] => opcodes::overflowing_sub(self, y, x),
+            [0x8, x, y, 0x7] => opcodes::subtract(self, y, x),
             // 8xyE - Set Vx = Vx SHL 1.
-            [0x8, x, _, 0xE] => opcodes::overflowing_shift_left(self, x),
+            [0x8, x, _, 0xE] => opcodes::shift_left(self, x),
             // 9xy0 - Skip next instruction if Vx != Vy.
-            [0x9, x, y, 0x0] => opcodes::skip_reg_ne(self, x, y),
+            [0x9, x, y, 0x0] => opcodes::skip_reg_not_equal(self, x, y),
             // Annn - Set I = nnn.
             [0xA, n1, n2, n3] => self.reg_i = addr(n1, n2, n3),
             // Bnnn - Jump to location nnn + V0.
@@ -108,13 +109,13 @@ impl State {
             // Set VF = collision.
             [0xD, x, y, n] => opcodes::draw_sprite(self, x, y, n),
             // Ex9E - Skip next instruction if key with the value of Vx is pressed.
-            [0xE, x, 0x9, 0xE] => opcodes::skip_pressed(self, x),
+            [0xE, x, 0x9, 0xE] => opcodes::skip_if_pressed(self, input, x),
             // ExA1 - Skip next instruction if key with the value of Vx is not pressed.
-            [0xE, x, 0xA, 0x1] => opcodes::skip_unpressed(self, x),
+            [0xE, x, 0xA, 0x1] => opcodes::skip_if_unpressed(self, input, x),
             // Fx07 - Set Vx = delay timer value.
             [0xF, x, 0x0, 0x7] => self.reg_v[x as usize] = self.delay,
             // Fx0A - Block and wait for a key press, store the value of the key in Vx.
-            [0xF, x, 0x0, 0xA] => opcodes::block_input(self, x),
+            [0xF, x, 0x0, 0xA] => opcodes::block_input(self, input, x),
             // Fx15 - Set delay timer = Vx.
             [0xF, x, 0x1, 0x5] => self.delay = self.reg_v[x as usize],
             // Fx18 - Set sound timer = Vx.
@@ -132,6 +133,10 @@ impl State {
 
             _ => panic!("Interpreter encountered an unknown opcode: {:?}", opcode),
         }
+    }
+
+    pub fn step_forward(&mut self) {
+        self.step([false; 16]);
     }
 }
 

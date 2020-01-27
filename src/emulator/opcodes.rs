@@ -1,4 +1,7 @@
-use crate::{emulator::state::State, utils::u8_to_bits};
+use crate::{
+    emulator::{input::Input, State},
+    utils::u8_to_bits,
+};
 
 // http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
 
@@ -25,7 +28,7 @@ pub fn call(s: &mut State, addr: u16) {
 ///
 /// The interpreter compares register Vx to kk, and if they are equal, increments the program
 /// counter by 2.
-pub fn skip_eq(s: &mut State, x: u8, byte: u8) {
+pub fn skip_if_equal(s: &mut State, x: u8, byte: u8) {
     if s.reg_v[x as usize] == byte {
         s.sp += 2;
     }
@@ -34,7 +37,7 @@ pub fn skip_eq(s: &mut State, x: u8, byte: u8) {
 ///
 /// The interpreter compares register Vx to kk, and if they are not equal, increments the program
 /// counter by 2.
-pub fn skip_ne(s: &mut State, x: u8, byte: u8) {
+pub fn skip_if_not_equal(s: &mut State, x: u8, byte: u8) {
     if s.reg_v[x as usize] != byte {
         s.sp += 2;
     }
@@ -43,7 +46,7 @@ pub fn skip_ne(s: &mut State, x: u8, byte: u8) {
 ///
 /// The interpreter compares register Vx to register Vy, and if they are equal, increments the
 /// program counter by 2.
-pub fn skip_reg_eq(s: &mut State, x: u8, y: u8) {
+pub fn skip_reg_equal(s: &mut State, x: u8, y: u8) {
     if s.reg_v[x as usize] == s.reg_v[y as usize] {
         s.sp += 2;
     }
@@ -53,7 +56,7 @@ pub fn skip_reg_eq(s: &mut State, x: u8, y: u8) {
 ///
 /// The values of Vx and Vy are added together. If the result is greater than 8 bits (i.e., > 255,)
 /// VF is set to 1, otherwise 0. Only the lowest 8 bits of the result are kept, and stored in Vx.
-pub fn overflowing_add(s: &mut State, x: u8, y: u8) {
+pub fn add(s: &mut State, x: u8, y: u8) {
     let (res, flag) = s.reg_v[x as usize].overflowing_add(s.reg_v[y as usize]);
     s.reg_v[x as usize] = res;
     s.reg_v[0xF] = flag as u8;
@@ -63,7 +66,7 @@ pub fn overflowing_add(s: &mut State, x: u8, y: u8) {
 ///
 /// If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx, and the results
 /// stored in Vx.
-pub fn overflowing_sub(s: &mut State, x: u8, y: u8) {
+pub fn subtract(s: &mut State, x: u8, y: u8) {
     let (res, flag) = s.reg_v[x as usize].overflowing_sub(s.reg_v[y as usize]);
     s.reg_v[x as usize] = res;
     s.reg_v[0xF] = !flag as u8;
@@ -73,7 +76,7 @@ pub fn overflowing_sub(s: &mut State, x: u8, y: u8) {
 ///
 /// If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is divided
 /// by 2.
-pub fn overflowing_shift_right(s: &mut State, x: u8) {
+pub fn shift_right(s: &mut State, x: u8) {
     s.reg_v[0xF] = s.reg_v[x as usize] & 0x01;
     s.reg_v[x as usize] <<= 1;
 }
@@ -82,7 +85,7 @@ pub fn overflowing_shift_right(s: &mut State, x: u8) {
 ///
 ///If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0. Then Vx is
 /// multiplied by 2.
-pub fn overflowing_shift_left(s: &mut State, x: u8) {
+pub fn shift_left(s: &mut State, x: u8) {
     s.reg_v[0xF] = ((s.reg_v[x as usize] & 0x80) != 0) as u8;
     s.reg_v[x as usize] >>= 1;
 }
@@ -91,7 +94,7 @@ pub fn overflowing_shift_left(s: &mut State, x: u8) {
 ///
 /// The values of Vx and Vy are compared, and if they are not equal, the program counter is
 /// increased by 2.
-pub fn skip_reg_ne(s: &mut State, x: u8, y: u8) {
+pub fn skip_reg_not_equal(s: &mut State, x: u8, y: u8) {
     if s.reg_v[x as usize] != s.reg_v[y as usize] {
         s.sp += 2;
     }
@@ -138,23 +141,42 @@ pub fn draw_sprite(s: &mut State, x: u8, y: u8, n: u8) {
 ///
 /// Checks the keyboard, and if the key corresponding to the value of Vx is currently in the down
 /// position, PC is increased by 2.
-pub fn skip_pressed(s: &mut State, x: u8) {
-    todo!()
+pub fn skip_if_pressed(s: &mut State, inp: Input, x: u8) {
+    let val = s.reg_v[x as usize];
+    if inp[val as usize] {
+        s.sp += 2;
+    }
 }
 
 /// Skip next instruction if key with the value of Vx is not pressed.
 ///
 /// Checks the keyboard, and if the key corresponding to the value of Vx is currently in the up
 /// position, PC is increased by 2.
-pub fn skip_unpressed(s: &mut State, x: u8) {
-    todo!()
+pub fn skip_if_unpressed(s: &mut State, inp: Input, x: u8) {
+    let val = s.reg_v[x as usize];
+    if !inp[val as usize] {
+        s.sp += 2;
+    }
 }
 
 /// Wait for a key press, store the value of the key in Vx.
 ///
 /// All execution stops until a key is pressed, then the value of that key is stored in Vx.
-pub fn block_input(s: &mut State, x: u8) {
-    todo!()
+pub fn block_input(s: &mut State, inp: Input, x: u8) {
+    for (i, key) in inp.iter().enumerate() {
+        if *key {
+            s.reg_v[x as usize] = i as u8;
+        }
+    }
+
+    // All execution stops. Hence, we should decrement the PC. This will be ran again next frame.
+    // We should also make sure the timers do not increase, or the emulation is not accurate.
+    s.sp -= 2;
+    s.delay += 1;
+    // Only increase the sound timer if it's not already finished, otherwise it'll beep.
+    if s.sound != 0 {
+        s.sound += 1;
+    }
 }
 
 /// Set I = location of sprite for digit Vx.
@@ -171,12 +193,12 @@ pub fn sprite_location(s: &mut State, x: u8) {
 /// The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at
 /// location in I, the tens digit at location I+1, and the ones digit at location I+2.
 pub fn store_bcd(s: &mut State, x: u8) {
-    let I = s.reg_i as usize;
-    let Vx = s.reg_v[x as usize];
+    let i = s.reg_i as usize;
+    let vx = s.reg_v[x as usize];
     // No need to mod 1000 because the range of u8 is below this
-    s.mem[I + 0] = Vx /*% 1000*/ / 100;
-    s.mem[I + 1] = (Vx % 100) / 10;
-    s.mem[I + 2] = Vx % 10;
+    s.mem[i + 0] = vx /*% 1000*/ / 100;
+    s.mem[i + 1] = (vx % 100) / 10;
+    s.mem[i + 2] = vx % 10;
 }
 
 /// Store registers V0 through Vx in memory starting at location I.

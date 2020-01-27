@@ -1,5 +1,11 @@
+/// A simple renderer that repeatedly prints the output to stdout. Included for debugging.
+pub mod debug;
 /// A simple no-operation renderer.
 pub mod noop;
+
+/// A simple no-operation renderer.
+pub use noop::DummyRenderer;
+/// A simple renderer that repeatedly prints the output to stdout. Included for debugging.
 
 /// The `Render` trait describes types which implement some kind of rendering protocol. It
 /// exposes the method `Render::render`, which takes the current state of the games display and
@@ -12,3 +18,6 @@ pub(crate) trait Render {
 
     fn render(display: [bool; 2048]) -> Result<(), Self::Err>;
 }
+
+/// This no-variant enumeration is used to tell the compiler that this type of renderer can't fail.
+pub enum Infallible {}
