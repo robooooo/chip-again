@@ -3,9 +3,10 @@ pub mod debug;
 /// A simple no-operation renderer.
 pub mod noop;
 
+/// A simple renderer that repeatedly prints the output to stdout. Included for debugging.
+pub use debug::DebugRenderer;
 /// A simple no-operation renderer.
 pub use noop::DummyRenderer;
-/// A simple renderer that repeatedly prints the output to stdout. Included for debugging.
 
 /// The `Render` trait describes types which implement some kind of rendering protocol. It
 /// exposes the method `Render::render`, which takes the current state of the games display and

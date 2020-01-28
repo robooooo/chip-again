@@ -2,7 +2,7 @@ use crate::display::{Infallible, Render};
 
 /// A simple no-operation renderer. This is useful for testing game logic, without needing to draw
 /// output to the screen.
-pub struct DummyRenderer;
+pub(crate) struct DummyRenderer;
 
 impl Render for DummyRenderer {
     type Err = Infallible;
