@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// A simple renderer that repeatedly prints the output to stdout. Included for debugging.
-pub(crate) struct DebugRenderer;
+pub struct DebugRenderer;
 
 impl Render for DebugRenderer {
     type Err = Infallible;

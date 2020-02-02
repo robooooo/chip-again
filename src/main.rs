@@ -29,4 +29,6 @@ pub(crate) struct Opt {
 fn main() {
     let opt = Opt::from_args();
     println!("{:?}", opt);
+
+    exec::main_loop(opt);
 }
