@@ -1,15 +1,10 @@
-use crate::{
-    display::{Infallible, Render},
-    emulator::State,
-};
+use crate::{display::Render, emulator::State, error::ErrorKind};
 
 /// A simple renderer that repeatedly prints the output to stdout. Included for debugging.
 pub struct DebugRenderer;
 
 impl Render for DebugRenderer {
-    type Err = Infallible;
-
-    fn render(display: [bool; 2048]) -> Result<(), Infallible> {
+    fn render(&mut self, display: [bool; 2048]) -> Result<(), ErrorKind> {
         for line in display.chunks_exact(State::WIDTH) {
             for b in line {
                 print!("{}", if *b { '█' } else { '░' });

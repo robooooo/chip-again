@@ -2,6 +2,8 @@
 pub mod display;
 /// Main emulator logic, includes emulated opcodes.
 pub mod emulator;
+/// Error handling and ErrorKind enum
+pub mod error;
 /// Main program loop and input handling.
 pub mod exec;
 /// Utility and helpful functions.
@@ -30,5 +32,8 @@ fn main() {
     let opt = Opt::from_args();
     println!("{:?}", opt);
 
-    exec::main_loop(opt);
+    if let Err(e) = exec::main_loop(opt) {
+        eprintln!("An error occurred in execution.");
+        eprintln!("{:?}", e);
+    }
 }

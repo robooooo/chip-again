@@ -44,7 +44,11 @@ impl State {
     /// this location.
     pub fn new(mem: &[u8]) -> Self {
         let mut res = Self::default();
-        res.mem[0x200..].copy_from_slice(mem);
+        // Load into emulator's memory starting at 0x200
+        // Silently truncates extra bytes (maybe worth changing?)
+        for (dst, &src) in res.mem[0x200..].iter_mut().zip(mem) {
+            *dst = src;
+        }
         res
     }
 

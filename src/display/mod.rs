@@ -14,11 +14,5 @@ pub use noop::DummyRenderer;
 /// and a value of `Result::<Render::Err>::Err` will be returned when the renderer has failed
 /// to render.
 pub(crate) trait Render {
-    /// Type that represents all errors that can occur in the `Render::render` function.
-    type Err;
-
-    fn render(display: [bool; 2048]) -> Result<(), Self::Err>;
+    fn render(&mut self, display: [bool; 2048]) -> Result<(), crate::error::ErrorKind>;
 }
-
-/// This no-variant enumeration is used to tell the compiler that this type of renderer can't fail.
-pub enum Infallible {}
