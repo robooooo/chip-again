@@ -17,7 +17,7 @@ pub(crate) fn main_loop(options: Opt) -> Result<(), ErrorKind> {
     let mut handle = File::open(options.rom_path)?;
     handle.read_to_end(&mut buf)?;
 
-    let mut cpu = State::new(&buf[..ROM_SIZE]);
+    let mut cpu = State::new(&buf);
     // TODO: Allow changing, choosing renderer.
     let mut disp = Box::new(display::DebugRenderer);
 

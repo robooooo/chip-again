@@ -46,6 +46,7 @@ impl State {
         let mut res = Self::default();
         // Load into emulator's memory starting at 0x200
         // Silently truncates extra bytes (maybe worth changing?)
+        let mem = &[0, 1];
         for (dst, &src) in res.mem[0x200..].iter_mut().zip(mem) {
             *dst = src;
         }
@@ -63,6 +64,13 @@ impl State {
         opcode[1] = self.mem[self.pc as usize + 0] & 0x0F;
         opcode[2] = self.mem[self.pc as usize + 1] & 0xF0;
         opcode[3] = self.mem[self.pc as usize + 1] & 0x0F;
+
+        println!(
+            "Got opcodes {:#x} {:#x}, decodes to {:#?}",
+            self.mem[self.pc as usize + 0],
+            self.mem[self.pc as usize + 0],
+            opcode
+        );
 
         match opcode {
             // 00E0 - Clear the display.
