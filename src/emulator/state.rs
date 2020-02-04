@@ -46,7 +46,6 @@ impl State {
         let mut res = Self::default();
         // Load into emulator's memory starting at 0x200
         // Silently truncates extra bytes (maybe worth changing?)
-        let mem = &[0, 1];
         for (dst, &src) in res.mem[0x200..].iter_mut().zip(mem) {
             *dst = src;
         }
@@ -60,16 +59,16 @@ impl State {
         // a function from the `opcodes` module. The opcode consists of two bytes,
         // we're interested in each nibble, so 4 values
         let mut opcode = [0u8; 4];
-        opcode[0] = self.mem[self.pc as usize + 0] & 0xF0;
+        opcode[0] = (self.mem[self.pc as usize + 0] & 0xF0) >> 4;
         opcode[1] = self.mem[self.pc as usize + 0] & 0x0F;
-        opcode[2] = self.mem[self.pc as usize + 1] & 0xF0;
+        opcode[2] = (self.mem[self.pc as usize + 1] & 0xF0) >> 4;
         opcode[3] = self.mem[self.pc as usize + 1] & 0x0F;
 
         println!(
-            "Got opcodes {:#x} {:#x}, decodes to {:#?}",
+            "Got opcodes {:#x} {:#x} at pc: {}",
             self.mem[self.pc as usize + 0],
-            self.mem[self.pc as usize + 0],
-            opcode
+            self.mem[self.pc as usize + 1],
+            self.pc,
         );
 
         match opcode {
@@ -78,7 +77,7 @@ impl State {
             // 00EE - Return from a subroutine.
             [0x0, 0x0, 0xE, 0xE] => opcodes::r#return(self),
             // 1nnn - Jump to location *nnn*.
-            [0x1, n1, n2, n3] => self.pc = addr(n1, n2, n3),
+            [0x1, n1, n2, n3] => self.pc = addr(n1, n2, n3) - 2,
             // 2nnn - Call subroutine at nnn.
             [0x2, n1, n2, n3] => opcodes::call(self, addr(n1, n2, n3)),
             // 3xkk - Skip next instruction if Vx = kk.
@@ -145,6 +144,8 @@ impl State {
 
             _ => panic!("Interpreter encountered an unknown opcode: {:?}", opcode),
         }
+
+        self.pc += 2;
     }
 
     pub fn step_forward(&mut self) {
@@ -190,10 +191,29 @@ impl Default for State {
 /// Combine three nibbles into an address.
 fn addr(n1: u8, n2: u8, n3: u8) -> u16 {
     let (n1, n2, n3) = (n1 as u16, n2 as u16, n3 as u16);
-    (n1 << 8) & (n2 << 4) & n3
+    (n1 << 8) | (n2 << 4) | n3
 }
 
 /// Combine two nibbles into a byte.
 fn byte(k1: u8, k2: u8) -> u8 {
-    (k1 << 4) & k2
+    (k1 << 4) | k2
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_addr() {
+        assert_eq!(0x0000, addr(0x0, 0x0, 0x0));
+        assert_eq!(0x0123, addr(0x1, 0x2, 0x3));
+        assert_eq!(0x0FFF, addr(0xF, 0xF, 0xF));
+    }
+
+    #[test]
+    fn test_byte() {
+        assert_eq!(0x00, byte(0x0, 0x0));
+        assert_eq!(0x12, byte(0x1, 0x2));
+        assert_eq!(0xFF, byte(0xF, 0xF));
+    }
 }
