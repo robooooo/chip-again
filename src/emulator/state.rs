@@ -1,4 +1,5 @@
 use crate::emulator::{fontset, input::Input, opcodes};
+use log::trace;
 use std::default::Default;
 
 #[derive(Copy, Clone)]
@@ -64,8 +65,8 @@ impl State {
         opcode[2] = (self.mem[self.pc as usize + 1] & 0xF0) >> 4;
         opcode[3] = self.mem[self.pc as usize + 1] & 0x0F;
 
-        println!(
-            "Got opcodes {:#x} {:#x} at pc: {}",
+        trace!(
+            "Executing {:#x} {:#x} @ {}",
             self.mem[self.pc as usize + 0],
             self.mem[self.pc as usize + 1],
             self.pc,
@@ -89,7 +90,9 @@ impl State {
             // 6xkk - Set Vx = kk.
             [0x6, x, k1, k2] => self.reg_v[x as usize] = byte(k1, k2),
             // 7xkk - Set Vx = Vx + kk.
-            [0x7, x, k1, k2] => self.reg_v[x as usize] += byte(k1, k2),
+            [0x7, x, k1, k2] => {
+                self.reg_v[x as usize] = self.reg_v[x as usize].wrapping_add(byte(k1, k2))
+            }
             // 8xy0 - Set Vx = Vy.
             [0x8, x, y, 0x0] => self.reg_v[x as usize] = self.reg_v[y as usize],
             // 8xy1 - Set Vx = Vx OR Vy.
@@ -113,7 +116,7 @@ impl State {
             // Annn - Set I = nnn.
             [0xA, n1, n2, n3] => self.reg_i = addr(n1, n2, n3),
             // Bnnn - Jump to location nnn + V0.
-            [0xB, n1, n2, n3] => self.pc = addr(n1, n2, n3) + self.reg_v[0x0] as u16,
+            [0xB, n1, n2, n3] => self.pc = addr(n1, n2, n3) - 2 + self.reg_v[0x0] as u16,
             // Cxkk - Set Vx = random byte AND kk.
             [0xC, x, k1, k2] => opcodes::random(self, x, byte(k1, k2)),
             // Dxyn - Display n-byte sprite starting at memory location I at (Vx, Vy)

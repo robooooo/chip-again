@@ -10,7 +10,7 @@ use crate::{
 /// The interpreter sets the program counter to the address at the top of the stack, then
 /// subtracts 1 from the stack pointer.
 pub fn r#return(s: &mut State) {
-    s.pc = s.stack[s.sp as usize];
+    s.pc = s.stack[s.sp as usize] - 2;
     s.sp -= 1;
 }
 
@@ -19,9 +19,9 @@ pub fn r#return(s: &mut State) {
 /// The interpreter increments the stack pointer, then puts the current PC on the top of the stack.
 /// The PC is then set to nnn.
 pub fn call(s: &mut State, addr: u16) {
-    s.sp += 1;
     s.stack[s.sp as usize] = addr;
-    s.pc = addr;
+    s.pc = addr - 2;
+    s.sp += 1;
 }
 
 /// Skip next instruction if Vx = kk.
@@ -30,7 +30,7 @@ pub fn call(s: &mut State, addr: u16) {
 /// counter by 2.
 pub fn skip_if_equal(s: &mut State, x: u8, byte: u8) {
     if s.reg_v[x as usize] == byte {
-        s.sp += 2;
+        s.pc += 2;
     }
 }
 /// Skip next instruction if Vx != kk.
@@ -39,7 +39,7 @@ pub fn skip_if_equal(s: &mut State, x: u8, byte: u8) {
 /// counter by 2.
 pub fn skip_if_not_equal(s: &mut State, x: u8, byte: u8) {
     if s.reg_v[x as usize] != byte {
-        s.sp += 2;
+        s.pc += 2;
     }
 }
 /// Skip next instruction if Vx = Vy.
@@ -48,7 +48,7 @@ pub fn skip_if_not_equal(s: &mut State, x: u8, byte: u8) {
 /// program counter by 2.
 pub fn skip_reg_equal(s: &mut State, x: u8, y: u8) {
     if s.reg_v[x as usize] == s.reg_v[y as usize] {
-        s.sp += 2;
+        s.pc += 2;
     }
 }
 
@@ -96,7 +96,7 @@ pub fn shift_left(s: &mut State, x: u8) {
 /// increased by 2.
 pub fn skip_reg_not_equal(s: &mut State, x: u8, y: u8) {
     if s.reg_v[x as usize] != s.reg_v[y as usize] {
-        s.sp += 2;
+        s.pc += 2;
     }
 }
 
@@ -144,7 +144,7 @@ pub fn draw_sprite(s: &mut State, x: u8, y: u8, n: u8) {
 pub fn skip_if_pressed(s: &mut State, inp: Input, x: u8) {
     let val = s.reg_v[x as usize];
     if inp[val as usize] {
-        s.sp += 2;
+        s.pc += 2;
     }
 }
 
@@ -155,7 +155,7 @@ pub fn skip_if_pressed(s: &mut State, inp: Input, x: u8) {
 pub fn skip_if_unpressed(s: &mut State, inp: Input, x: u8) {
     let val = s.reg_v[x as usize];
     if !inp[val as usize] {
-        s.sp += 2;
+        s.pc += 2;
     }
 }
 
@@ -171,7 +171,7 @@ pub fn block_input(s: &mut State, inp: Input, x: u8) {
 
     // All execution stops. Hence, we should decrement the PC. This will be ran again next frame.
     // We should also make sure the timers do not increase, or the emulation is not accurate.
-    s.sp -= 2;
+    s.pc -= 2;
     s.delay += 1;
     // Only increase the sound timer if it's not already finished, otherwise it'll beep.
     if s.sound != 0 {
@@ -206,7 +206,7 @@ pub fn store_bcd(s: &mut State, x: u8) {
 /// The interpreter copies the values of registers V0 through Vx into memory, starting at the
 /// address in I.
 pub fn copy_registers(s: &mut State, x: u8) {
-    for i in 0..x {
+    for i in 0..=x {
         s.mem[s.reg_i as usize + i as usize] = s.reg_v[i as usize];
     }
 }
@@ -215,7 +215,7 @@ pub fn copy_registers(s: &mut State, x: u8) {
 ///
 /// The interpreter reads values from memory starting at location I into registers V0 through Vx.
 pub fn load_registers(s: &mut State, x: u8) {
-    for i in 0..x {
+    for i in 0..=x {
         s.reg_v[i as usize] = s.mem[s.reg_i as usize + i as usize];
     }
 }
