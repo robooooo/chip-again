@@ -19,7 +19,7 @@ pub(crate) fn main_loop(options: Opt) -> Result<(), ErrorKind> {
 
     let mut cpu = State::new(&buf);
     // TODO: Allow changing, choosing renderer.
-    let mut disp = Box::new(display::DummyRenderer);
+    let mut disp = Box::new(display::debug::DebugRenderer([true; 2048]));
 
     loop {
         let mut input = Default::default();

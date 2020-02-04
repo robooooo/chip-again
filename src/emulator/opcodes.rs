@@ -10,8 +10,10 @@ use crate::{
 /// The interpreter sets the program counter to the address at the top of the stack, then
 /// subtracts 1 from the stack pointer.
 pub fn r#return(s: &mut State) {
-    s.pc = s.stack[s.sp as usize] - 2;
     s.sp -= 1;
+    // Do not decrement PC: if we did this, we would end up calling the function again!
+    // We want to skip the instruction at the address we are branching back to.
+    s.pc = s.stack[s.sp as usize];
 }
 
 /// Call subroutine at nnn.
@@ -19,7 +21,8 @@ pub fn r#return(s: &mut State) {
 /// The interpreter increments the stack pointer, then puts the current PC on the top of the stack.
 /// The PC is then set to nnn.
 pub fn call(s: &mut State, addr: u16) {
-    s.stack[s.sp as usize] = addr;
+    s.stack[s.sp as usize] = s.pc;
+    // Do decrement PC: We don't want to skip the first instruction at the address branched to.
     s.pc = addr - 2;
     s.sp += 1;
 }
@@ -118,15 +121,18 @@ pub fn random(s: &mut State, x: u8, kk: u8) {
 /// If the sprite is positioned so part of it is outside the coordinates of the display, it wraps
 /// around to the opposite side of the screen.
 pub fn draw_sprite(s: &mut State, x: u8, y: u8, n: u8) {
+    let x = x as usize;
+    let y = y as usize;
+
     s.reg_v[0xF] = 0;
     // We can write to (x, y) as display[x % width + (y * width) % height]
     // Each time y increments, we move down to the next row
-    for y in 0..(n as usize) {
+    for dy in 0..(n as usize) {
         let byte = s.mem[s.reg_i as usize + y];
         // Each time x increments, we move to the next column
-        for (x, &bit) in u8_to_bits(byte).iter().enumerate() {
-            let x_idx = x % State::WIDTH;
-            let y_idx = (y * State::WIDTH) % State::HEIGHT;
+        for (dx, &bit) in u8_to_bits(byte).iter().enumerate() {
+            let x_idx = (x + dx) % State::WIDTH;
+            let y_idx = ((y + dy) * State::WIDTH) % State::HEIGHT;
             let pixel = &mut s.display[x_idx + y_idx];
 
             if bit && *pixel {
