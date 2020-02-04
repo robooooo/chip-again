@@ -2,6 +2,7 @@ use crate::{
     emulator::{input::Input, State},
     utils::u8_to_bits,
 };
+use log::trace;
 
 // http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
 
@@ -81,7 +82,7 @@ pub fn subtract(s: &mut State, x: u8, y: u8) {
 /// by 2.
 pub fn shift_right(s: &mut State, x: u8) {
     s.reg_v[0xF] = s.reg_v[x as usize] & 0x01;
-    s.reg_v[x as usize] <<= 1;
+    s.reg_v[x as usize] >>= 1;
 }
 
 /// Set Vx = Vx SHL 1.
@@ -90,7 +91,7 @@ pub fn shift_right(s: &mut State, x: u8) {
 /// multiplied by 2.
 pub fn shift_left(s: &mut State, x: u8) {
     s.reg_v[0xF] = ((s.reg_v[x as usize] & 0x80) != 0) as u8;
-    s.reg_v[x as usize] >>= 1;
+    s.reg_v[x as usize] <<= 1;
 }
 
 /// Skip next instruction if Vx != Vy.
@@ -125,14 +126,14 @@ pub fn draw_sprite(s: &mut State, x: u8, y: u8, n: u8) {
     let y = y as usize;
 
     s.reg_v[0xF] = 0;
-    // We can write to (x, y) as display[x % width + (y * width) % height]
-    // Each time y increments, we move down to the next row
+    // We can write to (x, y) as display[(x % w) + (y % h) * w]
+    // Each time dy increments, we move down to the next row
     for dy in 0..(n as usize) {
-        let byte = s.mem[s.reg_i as usize + y];
-        // Each time x increments, we move to the next column
+        let byte = s.mem[s.reg_i as usize + dy];
+        // Each time dx increments, we move to the next column
         for (dx, &bit) in u8_to_bits(byte).iter().enumerate() {
             let x_idx = (x + dx) % State::WIDTH;
-            let y_idx = ((y + dy) * State::WIDTH) % State::HEIGHT;
+            let y_idx = ((y + dy) % State::HEIGHT) * State::WIDTH;
             let pixel = &mut s.display[x_idx + y_idx];
 
             if bit && *pixel {
@@ -212,16 +213,16 @@ pub fn store_bcd(s: &mut State, x: u8) {
 /// The interpreter copies the values of registers V0 through Vx into memory, starting at the
 /// address in I.
 pub fn copy_registers(s: &mut State, x: u8) {
-    for i in 0..=x {
-        s.mem[s.reg_i as usize + i as usize] = s.reg_v[i as usize];
-    }
+    let x = x as usize;
+    let idx = s.reg_i as usize;
+    s.mem[idx..=(idx + x)].copy_from_slice(&s.reg_v[0..=x]);
 }
 
 /// Read registers V0 through Vx from memory starting at location I.
 ///
 /// The interpreter reads values from memory starting at location I into registers V0 through Vx.
 pub fn load_registers(s: &mut State, x: u8) {
-    for i in 0..=x {
-        s.reg_v[i as usize] = s.mem[s.reg_i as usize + i as usize];
-    }
+    let x = x as usize;
+    let idx = s.reg_i as usize;
+    s.reg_v[0..=x].copy_from_slice(&s.mem[idx..=(idx + x)]);
 }

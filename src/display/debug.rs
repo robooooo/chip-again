@@ -19,6 +19,7 @@ impl Render for DebugRenderer {
             }
             println!();
         }
+        println!();
 
         Ok(())
     }
