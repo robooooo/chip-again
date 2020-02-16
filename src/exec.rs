@@ -6,6 +6,7 @@ use crate::{
 };
 // use crossterm::event::{self, KeyCode, KeyEvent};
 use std::{fs::File, io::prelude::*};
+
 /// Main loop, we want to take parsed command line input from main and run the emulator in a loop.
 /// It is also our responsibility to handle input, and pass the display state to an instance of
 /// `Render`, which we do here.
@@ -19,7 +20,7 @@ pub(crate) fn main_loop(options: Opt) -> Result<(), ErrorKind> {
 
     let mut cpu = State::new(&buf);
     // TODO: Allow changing, choosing renderer.
-    let mut disp = Box::new(display::debug::DebugRenderer([true; 2048]));
+    let mut disp = Box::new(display::TerminalRenderer::new()?);
 
     loop {
         let input = Default::default();
