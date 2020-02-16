@@ -66,11 +66,15 @@ impl State {
         opcode[3] = self.mem[self.pc as usize + 1] & 0x0F;
 
         trace!(
-            "Executing {:#x} {:#x} @ {}",
+            "Executing {:#04X} {:#04X} @ {}",
             self.mem[self.pc as usize + 0],
             self.mem[self.pc as usize + 1],
             self.pc,
         );
+
+        self.pc += 2;
+        self.delay = self.delay.saturating_sub(1);
+        self.sound = self.sound.saturating_sub(1);
 
         match opcode {
             // 00E0 - Clear the display.
@@ -78,7 +82,7 @@ impl State {
             // 00EE - Return from a subroutine.
             [0x0, 0x0, 0xE, 0xE] => opcodes::r#return(self),
             // 1nnn - Jump to location *nnn*.
-            [0x1, n1, n2, n3] => self.pc = addr(n1, n2, n3) - 2,
+            [0x1, n1, n2, n3] => self.pc = addr(n1, n2, n3),
             // 2nnn - Call subroutine at nnn.
             [0x2, n1, n2, n3] => opcodes::call(self, addr(n1, n2, n3)),
             // 3xkk - Skip next instruction if Vx = kk.
@@ -116,7 +120,7 @@ impl State {
             // Annn - Set I = nnn.
             [0xA, n1, n2, n3] => self.reg_i = addr(n1, n2, n3),
             // Bnnn - Jump to location nnn + V0.
-            [0xB, n1, n2, n3] => self.pc = addr(n1, n2, n3) - 2 + self.reg_v[0x0] as u16,
+            [0xB, n1, n2, n3] => self.pc = addr(n1, n2, n3) + dbg!(self.reg_v[0x0] as u16),
             // Cxkk - Set Vx = random byte AND kk.
             [0xC, x, k1, k2] => opcodes::random(self, x, byte(k1, k2)),
             // Dxyn - Display n-byte sprite starting at memory location I at (Vx, Vy)
@@ -147,8 +151,6 @@ impl State {
 
             _ => panic!("Interpreter encountered an unknown opcode: {:?}", opcode),
         }
-
-        self.pc += 2;
     }
 
     pub fn step_forward(&mut self) {

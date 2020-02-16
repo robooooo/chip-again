@@ -23,8 +23,7 @@ pub fn r#return(s: &mut State) {
 /// The PC is then set to nnn.
 pub fn call(s: &mut State, addr: u16) {
     s.stack[s.sp as usize] = s.pc;
-    // Do decrement PC: We don't want to skip the first instruction at the address branched to.
-    s.pc = addr - 2;
+    s.pc = addr;
     s.sp += 1;
 }
 
@@ -81,7 +80,7 @@ pub fn subtract(s: &mut State, x: u8, y: u8) {
 /// If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0. Then Vx is divided
 /// by 2.
 pub fn shift_right(s: &mut State, x: u8) {
-    s.reg_v[0xF] = s.reg_v[x as usize] & 0x01;
+    s.reg_v[0xF] = s.reg_v[x as usize] & 1;
     s.reg_v[x as usize] >>= 1;
 }
 
@@ -122,8 +121,8 @@ pub fn random(s: &mut State, x: u8, kk: u8) {
 /// If the sprite is positioned so part of it is outside the coordinates of the display, it wraps
 /// around to the opposite side of the screen.
 pub fn draw_sprite(s: &mut State, x: u8, y: u8, n: u8) {
-    let x = x as usize;
-    let y = y as usize;
+    let x = s.reg_v[x as usize] as usize;
+    let y = s.reg_v[y as usize] as usize;
 
     s.reg_v[0xF] = 0;
     // We can write to (x, y) as display[(x % w) + (y % h) * w]
@@ -134,6 +133,7 @@ pub fn draw_sprite(s: &mut State, x: u8, y: u8, n: u8) {
         for (dx, &bit) in u8_to_bits(byte).iter().enumerate() {
             let x_idx = (x + dx) % State::WIDTH;
             let y_idx = ((y + dy) % State::HEIGHT) * State::WIDTH;
+            trace!("Drawing at x{}, y{}", x + dx, y + dy);
             let pixel = &mut s.display[x_idx + y_idx];
 
             if bit && *pixel {

@@ -1,17 +1,17 @@
 use crate::{
     display::{self, Render},
-    emulator::{self, State},
+    emulator::State,
     error::ErrorKind,
     Opt,
 };
-use crossterm::event::{self, KeyCode, KeyEvent};
-use std::{fs::File, io::prelude::*, time::Duration};
+// use crossterm::event::{self, KeyCode, KeyEvent};
+use std::{fs::File, io::prelude::*};
 /// Main loop, we want to take parsed command line input from main and run the emulator in a loop.
 /// It is also our responsibility to handle input, and pass the display state to an instance of
 /// `Render`, which we do here.
 pub(crate) fn main_loop(options: Opt) -> Result<(), ErrorKind> {
     // ROM size, 2048 bytes of memory, 0x200 of which reserved for interpreter.
-    const ROM_SIZE: usize = 2048 - 0x200;
+    // const ROM_SIZE: usize = 2048 - 0x200;
 
     let mut buf = Vec::with_capacity(2048 - 0x200);
     let mut handle = File::open(options.rom_path)?;
@@ -22,7 +22,7 @@ pub(crate) fn main_loop(options: Opt) -> Result<(), ErrorKind> {
     let mut disp = Box::new(display::debug::DebugRenderer([true; 2048]));
 
     loop {
-        let mut input = Default::default();
+        let input = Default::default();
         //        if event::poll(Duration::from_millis(1000 / options.fps))? {
         //            //            match event::read()?.code {
         //            match unimplemented!() {
@@ -34,6 +34,4 @@ pub(crate) fn main_loop(options: Opt) -> Result<(), ErrorKind> {
         cpu.step(input);
         disp.render(cpu.display)?;
     }
-
-    Ok(())
 }
