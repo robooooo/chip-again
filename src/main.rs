@@ -22,7 +22,7 @@ use structopt::StructOpt;
 pub(crate) struct Opt {
     #[structopt(name = "rom", help = "Path to a chip8 compatible ROM file.")]
     rom_path: PathBuf,
-    #[structopt(short = "f", default_value = "30")]
+    #[structopt(short = "f", default_value = "60")]
     fps: u64,
 }
 

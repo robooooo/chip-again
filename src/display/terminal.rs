@@ -81,9 +81,10 @@ impl Drop for TerminalRenderer {
         // Implicitly ignore errors here (can't return them)
         let mut stdout = stdout();
         let _ = terminal::disable_raw_mode();
-        let _ = stdout.queue(cursor::Show);
-        let _ = stdout.queue(terminal::Clear(ClearType::All));
         let _ = stdout.queue(style::ResetColor);
+        let _ = stdout.queue(terminal::Clear(ClearType::All));
+        let _ = stdout.queue(cursor::MoveTo(0, 0));
+        let _ = stdout.queue(cursor::Show);
         let _ = stdout.flush();
     }
 }
