@@ -2,7 +2,6 @@ use crate::{
     emulator::{input::Input, State},
     utils::u8_to_bits,
 };
-use log::trace;
 
 // http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
 
@@ -133,7 +132,6 @@ pub fn draw_sprite(s: &mut State, x: u8, y: u8, n: u8) {
         for (dx, &bit) in u8_to_bits(byte).iter().enumerate() {
             let x_idx = (x + dx) % State::WIDTH;
             let y_idx = ((y + dy) % State::HEIGHT) * State::WIDTH;
-            trace!("Drawing at x{}, y{}", x + dx, y + dy);
             let pixel = &mut s.display[x_idx + y_idx];
 
             if bit && *pixel {
@@ -160,6 +158,7 @@ pub fn skip_if_pressed(s: &mut State, inp: Input, x: u8) {
 /// Checks the keyboard, and if the key corresponding to the value of Vx is currently in the up
 /// position, PC is increased by 2.
 pub fn skip_if_unpressed(s: &mut State, inp: Input, x: u8) {
+    eprintln!("Encountered skip if not pressed.");
     let val = s.reg_v[x as usize];
     if !inp[val as usize] {
         s.pc += 2;

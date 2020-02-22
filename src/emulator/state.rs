@@ -1,5 +1,4 @@
 use crate::emulator::{fontset, input::Input, opcodes};
-use log::trace;
 use std::default::Default;
 
 #[derive(Copy, Clone)]
@@ -64,13 +63,6 @@ impl State {
         opcode[1] = self.mem[self.pc as usize + 0] & 0x0F;
         opcode[2] = (self.mem[self.pc as usize + 1] & 0xF0) >> 4;
         opcode[3] = self.mem[self.pc as usize + 1] & 0x0F;
-
-        trace!(
-            "Executing {:#04X} {:#04X} @ {}",
-            self.mem[self.pc as usize + 0],
-            self.mem[self.pc as usize + 1],
-            self.pc,
-        );
 
         self.pc += 2;
         self.delay = self.delay.saturating_sub(1);

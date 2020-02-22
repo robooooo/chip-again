@@ -43,7 +43,7 @@ pub(crate) fn main_loop(options: Opt) -> Result<(), ErrorKind> {
                 }
             }
         }
-        
+
         cpu.step(input);
         disp.render(cpu.display)?;
     }
