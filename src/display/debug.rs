@@ -4,6 +4,12 @@ use std::cmp::Ordering;
 /// A simple renderer that repeatedly prints the output to stdout. Included for debugging.
 pub struct DebugRenderer(pub [bool; 2048]);
 
+impl DebugRenderer {
+    pub fn new() -> Self {
+        DebugRenderer([false; 2048])
+    }
+}
+
 impl Render for DebugRenderer {
     fn render(&mut self, display: [bool; 2048]) -> Result<(), ErrorKind> {
         // Do not render repeated frames

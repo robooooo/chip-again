@@ -14,7 +14,7 @@ const KEYMAP: [char; 16] = [
 /// Main loop, we want to take parsed command line input from main and run the emulator in a loop.
 /// It is also our responsibility to handle input, and pass the display state to an instance of
 /// `Render`, which we do here.
-pub(crate) fn main_loop(options: Opt) -> Result<(), ErrorKind> {
+pub fn main_loop(options: Opt) -> Result<(), ErrorKind> {
     // ROM size, 2048 bytes of memory, 0x200 of which reserved for interpreter.
     // const ROM_SIZE: usize = 2048 - 0x200;
 

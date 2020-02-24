@@ -10,3 +10,7 @@ pub enum ErrorKind {
     #[error("Error with files: {0:?}")]
     IoErr(#[from] IoError),
 }
+
+#[derive(Debug, Error)]
+#[error("{:?}", _0)]
+pub struct DisplayKindError(pub String);

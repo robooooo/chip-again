@@ -147,8 +147,16 @@ pub fn draw_sprite(s: &mut State, x: u8, y: u8, n: u8) {
 /// Checks the keyboard, and if the key corresponding to the value of Vx is currently in the down
 /// position, PC is increased by 2.
 pub fn skip_if_pressed(s: &mut State, inp: Input, x: u8) {
+    if inp.into_iter().any(|x| *x) {
+        dbg!(inp);
+    }
+    eprintln!("Called");
+    
+
     let val = s.reg_v[x as usize];
     if inp[val as usize] {
+        eprintln!("Skipped");
+
         s.pc += 2;
     }
 }
@@ -158,7 +166,10 @@ pub fn skip_if_pressed(s: &mut State, inp: Input, x: u8) {
 /// Checks the keyboard, and if the key corresponding to the value of Vx is currently in the up
 /// position, PC is increased by 2.
 pub fn skip_if_unpressed(s: &mut State, inp: Input, x: u8) {
-    eprintln!("Encountered skip if not pressed.");
+    if inp.into_iter().any(|x| *x) {
+        dbg!(inp);
+    }
+
     let val = s.reg_v[x as usize];
     if !inp[val as usize] {
         s.pc += 2;

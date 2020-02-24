@@ -12,6 +12,7 @@ pub mod utils;
 use env_logger;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use display::DisplayKind;
 
 // TODO: Add a display selector?
 #[derive(StructOpt, Debug)]
@@ -19,11 +20,13 @@ use structopt::StructOpt;
     name = "chip-again",
     about = "Another CHIP-8 emulator, for the terminal, written with Rust."
 )]
-pub(crate) struct Opt {
+pub struct Opt {
     #[structopt(name = "rom", help = "Path to a chip8 compatible ROM file.")]
     rom_path: PathBuf,
-    #[structopt(short = "f", default_value = "60")]
+    #[structopt(short = "f", default_value = "60", help = "Frames-per-second of the emulator.")]
     fps: u64,
+    #[structopt(name = "display", default_value = "Terminal", help = "Display mode.")]
+    display: DisplayKind,
 }
 
 fn main() {
