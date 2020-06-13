@@ -1,15 +1,11 @@
 use crate::{
     display::{self, Render},
-    emulator::{input::Input, State},
+    emulator::{input::*, State},
     error::ErrorKind,
     Opt,
 };
 use crossterm::event::{self, Event::Key, KeyCode};
 use std::{fs::File, io::prelude::*, time::Duration};
-
-const KEYMAP: [char; 16] = [
-    '1', '2', '3', '4', 'q', 'w', 'e', 'r', 'a', 's', 'd', 'f', 'z', 'x', 'c', 'v',
-];
 
 /// Main loop, we want to take parsed command line input from main and run the emulator in a loop.
 /// It is also our responsibility to handle input, and pass the display state to an instance of
@@ -29,9 +25,10 @@ pub fn main_loop(options: Opt) -> Result<(), ErrorKind> {
 
     loop {
         let mut input: Input = Default::default();
+        // TODO: Refactor this code out into emulator/input.rs
         if event::poll(Duration::from_millis(1000 / options.fps))? {
             if let Key(key_event) = event::read()? {
-                for (idx, &key) in KEYMAP.into_iter().enumerate() {
+                for (idx, &key) in KEYMAP.iter().enumerate() {
                     if let KeyCode::Char(pressed) = key_event.code {
                         if key == pressed {
                             input[idx] = true;

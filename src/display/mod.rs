@@ -1,5 +1,5 @@
-use std::str::FromStr;
 use crate::error::{DisplayKindError, ErrorKind};
+use std::str::FromStr;
 
 /// A simple renderer that repeatedly prints the output to stdout. Included for debugging.
 pub mod debug;
@@ -55,4 +55,3 @@ impl FromStr for DisplayKind {
         })
     }
 }
-

@@ -26,9 +26,7 @@ impl TerminalRenderer {
             .queue(terminal::Clear(ClearType::All))?;
 
         // Screen starts as blank, but let's set it to be all-white to render blank screen
-        let mut res = TerminalRenderer {
-            prev: [true; 2048],
-        };
+        let mut res = TerminalRenderer { prev: [true; 2048] };
 
         // Let's render an all-blank screen first
         res.render([false; 2048])?;
